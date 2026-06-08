@@ -1,0 +1,119 @@
+import os
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+
+DATASET_PATH = 'path/to/your/pneumonia_dataset'
+IMAGE_HEIGHT = 150
+IMAGE_WIDTH = 150
+BATCH_SIZE = 32
+EPOCHS = 10
+NUM_CLASSES = 2
+
+if not os.path.exists(DATASET_PATH):
+    print(f"Error: The dataset path '{DATASET_PATH}' does not exist.")
+    print(Kaggle Dataset_naam)
+    print("update the DATASET_PATH variable.")
+    exit()
+
+print("Loading and preparing the dataset...")
+data_generator = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest',
+    validation_split=0.2
+)
+
+train_data = data_generator.flow_from_directory(
+    directory=os.path.join(DATASET_PATH, 'train'),
+    target_size=(IMAGE_HEIGHT, IMAGE_WIDTH),
+    batch_size=BATCH_SIZE,
+    class_mode='categorical',
+    subset='training'
+)
+
+validation_data = data_generator.flow_from_directory(
+    directory=os.path.join(DATASET_PATH, 'train'),
+    target_size=(IMAGE_HEIGHT, IMAGE_WIDTH),
+    batch_size=BATCH_SIZE,
+    class_mode='categorical',
+    subset='validation'
+)
+
+class_names = list(train_data.class_indices.keys())
+print("Class names:", class_names)
+
+print("Building the CNN model...")
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, 3)),
+    MaxPooling2D((2, 2)),
+    
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    
+    Conv2D(128, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    
+    Flatten(),
+    Dense(512, activation='relu'),
+    Dense(NUM_CLASSES, activation='softmax')
+])
+
+model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+model.summary()
+
+print("\nStarting model training...")
+
+def predict_pneumonia_percentage(image_path):
+    if not os.path.exists(image_path):
+        print(f"Error: Image path '{image_path}' does not exist.")
+        return None, None
+        
+    img = tf.keras.preprocessing.image.load_img(
+        image_path, target_size=(IMAGE_HEIGHT, IMAGE_WIDTH)
+    )
+    img_array = tf.keras.preprocessing.image.img_to_array(img)
+    img_array = tf.expand_dims(img_array, 0)
+    
+    predictions = model.predict(img_array)
+    score = tf.nn.softmax(predictions[0])
+    
+    predicted_class_index = np.argmax(score)
+    predicted_class = class_names[predicted_class_index]
+    
+    confidence = np.max(score)
+    
+    if predicted_class == 'PNEUMONIA':
+        percentage = round(confidence * 100, 2)
+    else:
+        percentage = 0.0
+
+    return predicted_class, percentage
+
+test_image_path = os.path.join(DATASET_PATH, 'test', 'PNEUMONIA', 'NORMAL2-IM-0004-0001.jpeg')
+
+print(f"\nPerforming inference on image: {test_image_path}")
+predicted_class, percentage = predict_pneumonia_percentage(test_image_path)
+
+if predicted_class is not None:
+    print(f"Prediction: {predicted_class}")
+    print(f"Pneumonia confidence: {percentage}%")
+
+    img = plt.imread(test_image_path)
+    plt.imshow(img)
+    plt.title(f"Prediction: {predicted_class}\nPneumonia Conf.: {percentage}%")
+    plt.axis('off')
+    plt.show()

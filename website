@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pneumonia Detection System</title>
+
+<style>
+    body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #e0f7fa, #ede7f6);
+        margin: 0;
+        padding: 0;
+        text-align: center;
+    }
+
+    header {
+        background-color: #0D47A1; /* Dark Blue */
+        color: white;
+        padding: 20px 0;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+
+    section {
+        margin: 50px auto;
+        width: 90%;
+        max-width: 600px;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        padding: 30px;
+    }
+
+    h2 {
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    input[type="file"] {
+        padding: 10px;
+        border: 1px solid #aaa;
+        border-radius: 8px;
+        width: 80%;
+        margin: 10px 0;
+    }
+
+    button {
+        background-color: #0D47A1; /* Dark Blue */
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background-color: #08306B; /* Darker shade for hover */
+    }
+
+    .preview img {
+        margin-top: 20px;
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        border-radius: 10px;
+        border: 2px solid #ccc;
+    }
+
+    .result-box {
+        margin-top: 20px;
+        font-size: 22px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .confidence {
+        color: #555;
+        font-size: 16px;
+        margin-top: 5px;
+    }
+
+    /* Severity Bar Container */
+    .severity-bar-container {
+        width: 100%;
+        background-color: #ddd;
+        border-radius: 10px;
+        margin-top: 15px;
+        height: 25px;
+        overflow: hidden;
+    }
+
+    /* Severity Bar Fill */
+    .severity-bar-fill {
+        height: 100%;
+        width: 0%;
+        background-color: #0D47A1; /* Dark Blue */
+        text-align: right;
+        line-height: 25px;
+        color: white;
+        font-weight: bold;
+        border-radius: 10px;
+        transition: width 1s ease;
+        padding-right: 5px;
+        box-sizing: border-box;
+    }
+
+    footer {
+        margin-top: 40px;
+        padding: 15px;
+        background-color: #0D47A1; /* Dark Blue */
+        color: white;
+        font-size: 14px;
+    }
+</style>
+</head>
+
+<body>
+
+<header>🩺 Pneumonia Detection Portal</header>
+
+<section>
+    <h2>Upload Chest X-ray Image</h2>
+    <p style="color:#666">Upload an image to check for pneumonia symptoms (demo only)</p>
+
+    <input type="file" id="xrayInput" accept="image/*"><br>
+    <button onclick="simulateDetection()">Detect</button>
+
+    <div class="preview" id="preview"></div>
+    <div class="result-box" id="result"></div>
+    <div class="confidence" id="confidence"></div>
+
+    <!-- Severity Bar -->
+    <div class="severity-bar-container">
+        <div class="severity-bar-fill" id="severityBar">0%</div>
+    </div>
+</section>
+
+<footer>© 2025 Pneumonia Detection Project | AI for Health</footer>
+
+<script>
+function simulateDetection() {
+    const fileInput = document.getElementById("xrayInput");
+    const file = fileInput.files[0];
+    const previewDiv = document.getElementById("preview");
+    const resultBox = document.getElementById("result");
+    const confidenceBox = document.getElementById("confidence");
+    const severityBar = document.getElementById("severityBar");
+
+    if (!file) {
+        alert("Please upload an X-ray image first!");
+        return;
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        previewDiv.innerHTML = `<img src="${e.target.result}" alt="X-ray Image">`;
+    };
+    reader.readAsDataURL(file);
+
+    // Show analyzing message
+    resultBox.innerHTML = "Analyzing...";
+    resultBox.style.color = "#000";
+    confidenceBox.innerHTML = "";
+    severityBar.style.width = "0%";
+    severityBar.innerHTML = "0%";
+
+    // Simulate result (severity %)
+    setTimeout(() => {
+        const severity = (Math.random() * 100).toFixed(2); // 0-100%
+
+        if (severity > 50) {
+            resultBox.innerHTML = "❌ Pneumonia Detected";
+            resultBox.style.color = "#e53935";
+        } else {
+            resultBox.innerHTML = "✅ Normal (No Pneumonia)";
+            resultBox.style.color = "#43a047";
+        }
+
+        confidenceBox.innerHTML = "Severity: " + severity + "%";
+
+        // Animate severity bar
+        severityBar.style.width = severity + "%";
+        severityBar.innerHTML = severity + "%";
+    }, 1500); // simulate 1.5s delay
+}
+</script>
+
+</body>
+</html>

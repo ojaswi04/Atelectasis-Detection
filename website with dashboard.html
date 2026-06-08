@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pneumonia Detection Portal</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for the app */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0f2f1 0%, #b2ebf2 100%);
+            min-height: 100vh;
+        }
+
+        /* Hide pages by default, only JS will show the active page */
+        .page {
+            display: none;
+        }
+
+        .active-page {
+            display: block;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00bcd4;
+            border-radius: 10px;
+        }
+
+        /* --- Custom Animations for Entrance Effect --- */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Base class for elements waiting to be animated */
+        .animate-target {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        /* Class triggered by JS to start the animation */
+        .is-animated {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header / Navigation -->
+    <header class="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo/Title -->
+                <a href="#" onclick="showPage('home-page'); return false;" class="flex items-center space-x-2 text-2xl font-extrabold text-[#0097a7]">
+                    <i data-lucide="scan" class="h-6 w-6 text-[#00bcd4]"></i>
+                    <span>PneumoAI</span>
+                </a>
+                
+                <!-- Navigation Links -->
+                <nav class="flex space-x-6">
+                    <a href="#" onclick="showPage('home-page'); return false;" id="nav-home" class="nav-link text-gray-600 hover:text-[#00bcd4] transition duration-150 ease-in-out font-medium border-b-2 border-transparent">
+                        Detection
+                    </a>
+                    <a href="#" onclick="showPage('dashboard-page'); return false;" id="nav-dashboard" class="nav-link text-gray-600 hover:text-[#00bcd4] transition duration-150 ease-in-out font-medium border-b-2 border-transparent">
+                        Dashboard
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Home Page: Detection Tool -->
+        <section id="home-page" class="page active-page">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800">Rapid X-ray Analysis</h1>
+                <p class="text-gray-600 mt-2">Upload a Chest X-ray image for instant AI-assisted pneumonia detection.</p>
+            </div>
+
+            <!-- Detection Card - Added animate-target class -->
+            <div class="max-w-xl mx-auto bg-white rounded-xl shadow-2xl p-6 sm:p-8 border-t-4 border-[#0097a7] animate-target">
+                <h2 class="text-2xl font-semibold text-gray-700 flex items-center justify-center mb-6">
+                    <i data-lucide="cloud-upload" class="h-6 w-6 mr-2 text-[#00bcd4]"></i>
+                    Upload Image
+                </h2>
+                
+                <form id="detection-form" onsubmit="handleDetect(event)">
+                    <input type="file" id="xray-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#e0f7fa] file:text-[#0097a7] hover:file:bg-[#b2ebf2]" required onchange="previewImage(event)">
+                    
+                    <div class="mt-6 text-center">
+                        <button type="submit" id="detect-button" class="w-full sm:w-auto px-6 py-3 bg-[#00bcd4] text-white font-bold rounded-full shadow-md hover:bg-[#0097a7] transition duration-200 ease-in-out disabled:opacity-50 flex items-center justify-center">
+                            <i data-lucide="activity-square" class="h-5 w-5 mr-2"></i>
+                            Detect Pneumonia
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Image Preview and Result Area -->
+                <div id="result-area" class="mt-8 pt-6 border-t border-gray-200 hidden">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Analysis Result</h3>
+                    
+                    <!-- Image Preview -->
+                    <div class="relative mb-6">
+                        <img id="image-preview" class="w-full h-auto object-contain max-h-96 rounded-lg shadow-lg border border-gray-200" src="" alt="X-ray Preview">
+                        <div class="absolute top-2 right-2 bg-gray-900/70 text-white text-xs px-3 py-1 rounded-full font-mono">
+                            AI Scan
+                        </div>
+                    </div>
+
+                    <!-- Status Display -->
+                    <div id="status-display" class="p-4 rounded-lg flex items-center space-x-4">
+                        <!-- Content injected by JavaScript -->
+                    </div>
+
+                    <!-- Progress Bar (Severity) -->
+                    <div class="mt-4">
+                        <label class="text-sm font-medium text-gray-600">Severity Score (0% - 100%)</label>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="severity-bar" class="h-3 rounded-full transition-all duration-500 ease-in-out" style="width: 0%"></div>
+                        </div>
+                        <p id="severity-text" class="text-right text-sm font-mono mt-1 text-gray-600">0.00%</p>
+                    </div>
+
+                    <!-- Disclaimer -->
+                    <p class="text-xs text-red-500 mt-6 p-2 bg-red-50 rounded-md border border-red-200">
+                        <i data-lucide="alert-triangle" class="h-4 w-4 inline mr-1"></i>
+                        Disclaimer: This is a simulated result. Always consult with a qualified physician for a medical diagnosis.
+                    </p>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loading-spinner" class="mt-8 text-center hidden">
+                    <div class="animate-spin inline-block w-8 h-8 border-4 border-[#00bcd4] border-t-transparent rounded-full" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-[#0097a7] font-medium">Analyzing image, please wait...</p>
+                </div>
+                
+            </div>
+        </section>
+
+        <!-- Dashboard Page: Analytics & Stats -->
+        <section id="dashboard-page" class="page">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-bold text-gray-800">System Dashboard</h1>
+                <p class="text-gray-600 mt-2">A summary of mock system performance and detection statistics.</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Stat Card 1 - Added animate-target and hover:scale class -->
+                <div class="stat-card bg-white rounded-xl p-6 shadow-xl border-l-4 border-indigo-500 transition hover:shadow-2xl hover:scale-[1.03] duration-300 animate-target">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm font-medium text-gray-500">Total Scans Performed</div>
+                        <i data-lucide="heart-pulse" class="h-8 w-8 text-indigo-500 bg-indigo-50 p-1.5 rounded-full"></i>
+                    </div>
+                    <p class="mt-1 text-3xl font-extrabold text-gray-900" id="stat-total-scans">2,150</p>
+                    <p class="text-xs text-green-500 mt-1">+12% last week</p>
+                </div>
+
+                <!-- Stat Card 2 - Added animate-target and hover:scale class -->
+                <div class="stat-card bg-white rounded-xl p-6 shadow-xl border-l-4 border-red-500 transition hover:shadow-2xl hover:scale-[1.03] duration-300 animate-target">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm font-medium text-gray-500">Positive Detections</div>
+                        <i data-lucide="bug" class="h-8 w-8 text-red-500 bg-red-50 p-1.5 rounded-full"></i>
+                    </div>
+                    <p class="mt-1 text-3xl font-extrabold text-gray-900" id="stat-positive-cases">542</p>
+                    <p class="text-xs text-red-500 mt-1">+4.5% last month</p>
+                </div>
+
+                <!-- Stat Card 3 - Added animate-target and hover:scale class -->
+                <div class="stat-card bg-white rounded-xl p-6 shadow-xl border-l-4 border-green-500 transition hover:shadow-2xl hover:scale-[1.03] duration-300 animate-target">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm font-medium text-gray-500">Accuracy (Simulated)</div>
+                        <i data-lucide="check-circle" class="h-8 w-8 text-green-500 bg-green-50 p-1.5 rounded-full"></i>
+                    </div>
+                    <p class="mt-1 text-3xl font-extrabold text-gray-900" id="stat-accuracy">96.7%</p>
+                    <p class="text-xs text-gray-500 mt-1">Target: 95.0%</p>
+                </div>
+
+                <!-- Stat Card 4 - Added animate-target and hover:scale class -->
+                <div class="stat-card bg-white rounded-xl p-6 shadow-xl border-l-4 border-yellow-500 transition hover:shadow-2xl hover:scale-[1.03] duration-300 animate-target">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm font-medium text-gray-500">Average Analysis Time</div>
+                        <i data-lucide="clock" class="h-8 w-8 text-yellow-500 bg-yellow-50 p-1.5 rounded-full"></i>
+                    </div>
+                    <p class="mt-1 text-3xl font-extrabold text-gray-900" id="stat-avg-time">1.2 s</p>
+                    <p class="text-xs text-green-500 mt-1">Industry best</p>
+                </div>
+            </div>
+
+            <!-- Detailed Summary Area - Added animate-target class -->
+            <div class="mt-10 bg-white p-8 rounded-xl shadow-2xl border-t-4 border-[#00bcd4] animate-target">
+                <h2 class="text-2xl font-semibold text-gray-700 flex items-center mb-6">
+                    <i data-lucide="trending-up" class="h-6 w-6 mr-2 text-[#00bcd4]"></i>
+                    Detection Trends
+                </h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600">
+                        The current detection model utilizes a custom DenseNet-121 architecture, achieving **high sensitivity (98%)** in simulated clinical trials. The low average analysis time of <span class="font-bold text-[#0097a7]">1.2 seconds</span> ensures rapid decision-making in high-pressure environments.
+                    </p>
+                    <p class="text-gray-600">
+                        While the system maintains a high overall accuracy, **False Negative reduction** remains a key development focus to ensure no potential cases are missed. Continuous training data from diverse demographics is being integrated to improve generalization.
+                    </p>
+                    <a href="#" onclick="showPage('home-page'); return false;" class="inline-flex items-center text-[#00bcd4] font-semibold hover:text-[#0097a7] mt-4 transition duration-150">
+                        Run a new diagnosis
+                        <i data-lucide="arrow-right" class="h-4 w-4 ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16 py-6 border-t border-gray-300">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            &copy; 2024 PneumoAI Detection Portal. Powered by Deep Learning.
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial call to set up the page and icons
+            showPage('home-page'); 
+        });
+
+        const pages = ['home-page', 'dashboard-page'];
+
+        /**
+         * Switches the active content page, updates navigation styles, and triggers a staggered entrance animation.
+         * @param {string} pageId - The ID of the page to show (e.g., 'home-page').
+         */
+        function showPage(pageId) {
+            // 1. Reset all pages and navigation
+            pages.forEach(id => {
+                const page = document.getElementById(id);
+                if (page) {
+                    page.classList.remove('active-page');
+                    // Remove animation trigger class from all targets
+                    page.querySelectorAll('.animate-target').forEach(card => {
+                        card.classList.remove('is-animated');
+                    });
+                }
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('border-[#00bcd4]', 'text-[#0097a7]', 'border-b-2');
+                link.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            // 2. Show the requested page and set active nav style
+            const activePage = document.getElementById(pageId);
+            if (activePage) activePage.classList.add('active-page');
+
+            const activeNavId = 'nav-' + pageId.replace('-page', '');
+            const activeNav = document.getElementById(activeNavId);
+            if (activeNav) {
+                activeNav.classList.add('border-[#00bcd4]', 'text-[#0097a7]', 'border-b-2');
+                activeNav.classList.remove('border-transparent', 'text-gray-600');
+            }
+            
+            // 3. Re-render Lucide Icons for the new page content
+            lucide.createIcons();
+
+            // 4. Trigger Entrance Animation for the new page
+            const targets = activePage.querySelectorAll('.animate-target');
+            targets.forEach((card, index) => {
+                // Stagger the animation by 100ms per element to make it look dynamic
+                setTimeout(() => {
+                    card.classList.add('is-animated');
+                }, index * 100); 
+            });
+        }
+
+        /**
+         * Handles image preview when a file is selected.
+         * @param {Event} event - The file input change event.
+         */
+        function previewImage(event) {
+            const input = event.target;
+            const preview = document.getElementById('image-preview');
+            const resultArea = document.getElementById('result-area');
+
+            // Reset results display
+            resultArea.classList.add('hidden');
+            preview.src = '';
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    // Pre-fill result image with a placeholder/preview before detection
+                    resultArea.classList.remove('hidden'); 
+                    // Reset to default style
+                    document.getElementById('status-display').innerHTML = '';
+                    document.getElementById('status-display').classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+                    document.getElementById('severity-bar').style.width = '0%';
+                    document.getElementById('severity-text').textContent = '0.00%';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        /**
+         * Simulates the AI detection process and displays a mock result.
+         * @param {Event} event - The form submission event.
+         */
+        function handleDetect(event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('xray-file-input');
+            const resultArea = document.getElementById('result-area');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const detectButton = document.getElementById('detect-button');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                // Use a custom modal or inline message instead of alert()
+                console.error('Please upload a chest X-ray image first.');
+                return;
+            }
+
+            // 1. Start Loading State
+            resultArea.classList.add('hidden');
+            detectButton.disabled = true;
+            loadingSpinner.classList.remove('hidden');
+
+            // 2. Simulate Network Delay (2 seconds)
+            setTimeout(() => {
+                // 3. End Loading State
+                loadingSpinner.classList.add('hidden');
+                detectButton.disabled = false;
+                resultArea.classList.remove('hidden');
+
+                // 4. Generate Mock Results
+                const isPneumonia = Math.random() < 0.4; // 40% chance of being positive
+                let severity = Math.random() * (isPneumonia ? 100 : 40); // Higher severity if positive
+                severity = Math.min(severity, 100).toFixed(2);
+                
+                let statusClass = '';
+                let barColor = '';
+                let message = '';
+
+                if (isPneumonia) {
+                    statusClass = 'bg-red-100 text-red-800';
+                    barColor = 'bg-red-500';
+                    message = `<i data-lucide="thermometer-snowflake" class="h-6 w-6"></i>
+                                <div>
+                                    <p class="font-bold">POSITIVE (Pneumonia Detected)</p>
+                                    <p class="text-sm">High likelihood of infection based on lung opacity patterns.</p>
+                                </div>`;
+                } else {
+                    statusClass = 'bg-green-100 text-green-800';
+                    barColor = 'bg-green-500';
+                    message = `<i data-lucide="shield-check" class="h-6 w-6"></i>
+                                <div>
+                                    <p class="font-bold">NEGATIVE (No Pneumonia)</p>
+                                    <p class="text-sm">Lungs appear clear with no significant opacities detected.</p>
+                                </div>`;
+                }
+
+                // 5. Update UI with Results
+                const statusDisplay = document.getElementById('status-display');
+                statusDisplay.className = `p-4 rounded-lg flex items-center space-x-4 ${statusClass}`;
+                statusDisplay.innerHTML = message;
+                
+                document.getElementById('severity-bar').style.width = severity + '%';
+                document.getElementById('severity-bar').className = `h-3 rounded-full transition-all duration-500 ease-in-out ${barColor}`;
+                document.getElementById('severity-text').textContent = severity + '%';
+
+                // Re-render icons after DOM update
+                lucide.createIcons();
+
+            }, 2000); // 2 second delay
+        }
+        
+    </script>
+</body>
+</html>
